@@ -30,6 +30,47 @@ test.group('Users', (group) => {
     response.assertStatus(200)
     response.assertBodyContains({ authenticated: true })
   })
+})
+
+test.group('Users | Login / Logout', (group) => {
+  group.each.setup(async () => {
+    await Database.beginGlobalTransaction('pg')
+    return () => Database.rollbackGlobalTransaction('pg')
+  })
+
+  test('ensure we can login user', async ({ client }) => {
+    const user = await UserFactory.create()
+    const response = await client
+      .post('/auth/login')
+      .json({ email: user.email, password: 'secret1234' })
+
+    response.assertStatus(204)
+  })
+
+  test('ensure throw error when login with invalid password', async ({ client }) => {
+    const user = await UserFactory.create()
+    const response = await client
+      .post('/auth/login')
+      .json({ email: user.email, password: 'invalid' })
+
+    response.assertStatus(400)
+    response.assertBodyContains({
+      code: 'E_INVALID_CREDENTIALS',
+      message: 'No account can be found with the provided credentials.',
+    })
+  })
+
+  test('ensure throw error when login with invalid email', async ({ client }) => {
+    const response = await client
+      .post('/auth/login')
+      .json({ email: 'romain.lanz@example.com', password: 'invalid' })
+
+    response.assertStatus(400)
+    response.assertBodyContains({
+      code: 'E_INVALID_CREDENTIALS',
+      message: 'No account can be found with the provided credentials.',
+    })
+  })
 
   test('ensure that we can log out a user', async ({ client }) => {
     const user = await UserFactory.create()
