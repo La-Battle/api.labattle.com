@@ -3,6 +3,14 @@ import CreateUserValidator from 'App/Validators/CreateUserValidator'
 import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 
 export default class AuthController {
+  public me({ auth }: HttpContextContract) {
+    return auth.user
+  }
+
+  public async check({ auth, response }: HttpContextContract) {
+    return response.ok({ authenticated: auth.isAuthenticated })
+  }
+
   public async register({ auth, request, response }: HttpContextContract) {
     const payload = await request.validate(CreateUserValidator)
 

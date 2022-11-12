@@ -2,6 +2,36 @@ import { test } from '@japa/runner'
 import Database from '@ioc:Adonis/Lucid/Database'
 import { UserFactory } from 'Database/factories'
 
+test.group('Users', (group) => {
+  group.each.setup(async () => {
+    await Database.beginGlobalTransaction('pg')
+    return () => Database.rollbackGlobalTransaction('pg')
+  })
+
+  test('ensure we can get logged in user details', async ({ assert, client }) => {
+    const user = await UserFactory.create()
+    const response = await client.get('/auth/me').loginAs(user)
+
+    response.assertStatus(200)
+    assert.equal(response.body().id, user.id)
+  })
+
+  test('ensure auth check returns correct status when guest', async ({ client }) => {
+    const response = await client.get('/auth/check')
+
+    response.assertStatus(200)
+    response.assertBodyContains({ authenticated: false })
+  })
+
+  test('ensure auth check returns correct status when auth', async ({ client }) => {
+    const user = await UserFactory.create()
+    const response = await client.get('/auth/check').loginAs(user)
+
+    response.assertStatus(200)
+    response.assertBodyContains({ authenticated: true })
+  })
+})
+
 test.group('Users | Register', (group) => {
   group.each.setup(async () => {
     await Database.beginGlobalTransaction('pg')
