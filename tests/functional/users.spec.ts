@@ -30,6 +30,13 @@ test.group('Users', (group) => {
     response.assertStatus(200)
     response.assertBodyContains({ authenticated: true })
   })
+
+  test('ensure that we can log out a user', async ({ client }) => {
+    const user = await UserFactory.create()
+    const response = await client.delete('/auth/logout').loginAs(user)
+
+    response.assertStatus(204)
+  })
 })
 
 test.group('Users | Register', (group) => {
